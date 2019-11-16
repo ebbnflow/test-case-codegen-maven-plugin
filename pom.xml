@@ -12,8 +12,7 @@
 
   <name>test-case-codegen Maven Plugin</name>
 
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <url>https://github.com/ebbnflow</url>
 
   <prerequisites>
     <maven>${maven.version}</maven>
@@ -56,6 +55,12 @@
       <artifactId>maven-plugin-annotations</artifactId>
       <version>3.6.0</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.3.1</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -109,7 +114,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-invoker-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.2.1</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -149,7 +154,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.1</version>
             <configuration>
               <debug>true</debug>
               <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
@@ -174,6 +179,16 @@
                 </goals>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M3</version>
+            <configuration>
+              <excludes>
+                <exclude>some test to exclude here</exclude>
+              </excludes>
+            </configuration>
           </plugin>
         </plugins>
       </build>

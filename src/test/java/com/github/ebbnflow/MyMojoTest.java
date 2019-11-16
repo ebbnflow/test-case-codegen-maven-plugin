@@ -4,21 +4,27 @@ package com.github.ebbnflow;
 import org.apache.maven.plugin.testing.MojoRule;
 import org.apache.maven.plugin.testing.WithoutMojo;
 
-import org.junit.Rule;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import java.io.File;
 
 public class MyMojoTest
 {
-    @Rule
+
     public MojoRule rule = new MojoRule()
     {
+        @BeforeAll
         @Override
-        protected void before() throws Throwable 
+        protected void before() throws Throwable
         {
         }
 
+        @AfterAll
         @Override
         protected void after()
         {
