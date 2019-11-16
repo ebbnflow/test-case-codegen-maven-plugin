@@ -1,6 +1,9 @@
 package com.github.ebbnflow;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
@@ -9,7 +12,8 @@ import java.util.*;
 
 public class RandomObjectFiller {
 
-    //    private static final Logger log LoggerFactory. get Logger(RandomObjectFiller.class);
+    private static final Logger log  = LoggerFactory.getLogger(RandomObjectFiller.class);
+
     private Random random = new Random();
     private int listMin = 1;
     private int listMax = 5;
@@ -20,7 +24,6 @@ public class RandomObjectFiller {
         fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
 
         if (clazz.getSuperclass() != null) {
-
             fields.addAll(Arrays.asList(clazz.getSuperclass().getDeclaredFields()));
         }
 
