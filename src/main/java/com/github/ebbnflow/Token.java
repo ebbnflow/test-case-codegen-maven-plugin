@@ -1,4 +1,5 @@
 package com.github.ebbnflow;
+
 import com.google.common.base.Objects;
 
 import java.util.ArrayList;
@@ -8,6 +9,11 @@ public class Token {
     private String tokenStart;
     private List<Token> childTokens;
     private String tokenEnd;
+    private boolean newLineAfterTokenEnd;
+
+    public Token(){
+        this.newLineAfterTokenEnd = true;
+    }
 
     public String getTokenStart() {
         return tokenStart;
@@ -33,18 +39,18 @@ public class Token {
         this.tokenEnd = tokenEnd;
     }
 
-    public Token createChildToken(){
-        if (null  == this.childTokens){
-            this.childTokens  = new ArrayList<>();
+    public Token createChildToken() {
+        if (null == this.childTokens) {
+            this.childTokens = new ArrayList<>();
         }
         Token newChildToken = new Token();
         this.childTokens.add(newChildToken);
         return newChildToken;
     }
 
-    public Token createChildToken(String startToken, String tokenEnd){
-        if (null  == this.childTokens){
-            this.childTokens  = new ArrayList<>();
+    public Token createChildToken(String startToken, String tokenEnd) {
+        if (null == this.childTokens) {
+            this.childTokens = new ArrayList<>();
         }
         Token newChildToken = new Token();
         this.childTokens.add(newChildToken);
@@ -53,19 +59,24 @@ public class Token {
         return newChildToken;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Token token = (Token) o;
-        return Objects.equal(tokenStart, token.tokenStart) &&
-                Objects.equal(childTokens, token.childTokens) &&
-                Objects.equal(tokenEnd, token.tokenEnd);
+    public Token createChildToken(String startToken, String tokenEnd, boolean addNewLineAfterTokenEnd) {
+        if (null == this.childTokens) {
+            this.childTokens = new ArrayList<>();
+        }
+        Token newChildToken = new Token();
+        this.childTokens.add(newChildToken);
+        newChildToken.tokenStart = startToken;
+        newChildToken.tokenEnd = tokenEnd;
+        newChildToken.newLineAfterTokenEnd = addNewLineAfterTokenEnd;
+        return newChildToken;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(tokenStart, childTokens, tokenEnd);
+    public boolean isNewLineAfterTokenEnd() {
+        return newLineAfterTokenEnd;
+    }
+
+    public void setNewLineAfterTokenEnd(boolean newLineAfterTokenEnd) {
+        this.newLineAfterTokenEnd = newLineAfterTokenEnd;
     }
 
     @Override
@@ -74,6 +85,24 @@ public class Token {
                 "tokenStart='" + tokenStart + '\'' +
                 ", childTokens=" + childTokens +
                 ", tokenEnd='" + tokenEnd + '\'' +
+                ", addNewLineAfterTokenEnd=" + newLineAfterTokenEnd +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Token token = (Token) o;
+        return newLineAfterTokenEnd == token.newLineAfterTokenEnd &&
+                Objects.equal(tokenStart, token.tokenStart) &&
+                Objects.equal(childTokens, token.childTokens) &&
+                Objects.equal(tokenEnd, token.tokenEnd);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(tokenStart, childTokens, tokenEnd, newLineAfterTokenEnd);
+    }
+
 }
