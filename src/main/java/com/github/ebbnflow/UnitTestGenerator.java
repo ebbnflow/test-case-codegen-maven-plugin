@@ -68,7 +68,7 @@ public class UnitTestGenerator<T> {
 //    if (isClassCollection(object.getClass())) {
 //      createCollectionFactoryAndAssertions(object, assertionMethodToken);
 //    } else {
-      createObjectFactoryAndAssertions(object, assertionMethodToken);
+    createObjectFactoryAndAssertions(object, assertionMethodToken);
 //    }
 
   }
@@ -162,10 +162,11 @@ public class UnitTestGenerator<T> {
 //
 //  }
 
-  private void createCollectionMethodCall(Object object, Token assertionMethodToken,
+  private void createCollectionMethodCall(Object parentObject, Token assertionMethodToken,
       Token factoryMethodRoot, Field field, Class<?> type, String getterName, String setterName,
-      Object value)
-      throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+      Object listObj)
+       {
+
 
     if (type.equals(List.class)) {
       ParameterizedType listType = (ParameterizedType) field.getGenericType();
@@ -184,7 +185,7 @@ public class UnitTestGenerator<T> {
       //rootObj.setMyObjList(typeList);
       factoryMethodRoot.createChildToken(
           MessageFormat.format("a{0}.{1}(a{2}{3});",
-              object.getClass().getSimpleName(), //aSimplePojo
+              parentObject.getClass().getSimpleName(), //aSimplePojo
               setterName, //setMyNestedList
               clazz.getSimpleName(), //NestedClass
               simpleListName // List
@@ -198,36 +199,30 @@ public class UnitTestGenerator<T> {
       assertionMethodToken.createChildToken(
           MessageFormat.format("assert{0}(a{1}.{2}());",
               makeFirstLetterUpperCase(field.getName()),
-              object.getClass().getSimpleName(),
+              parentObject.getClass().getSimpleName(),
               getterName),
           null);
 
-      String assertionMethodName = MessageFormat.format("public void assert{0}({1}<{2}> a{2}{3})'{'",
-          makeFirstLetterUpperCase(field.getName()),
-          listType.getRawType().getTypeName(),
-          clazz.getSimpleName(),
-          simpleListName);
+      String assertionMethodName = MessageFormat
+          .format("public void assert{0}({1}<{2}> a{2}{3})'{'",
+              makeFirstLetterUpperCase(field.getName()),
+              listType.getRawType().getTypeName(),
+              clazz.getSimpleName(),
+              simpleListName);
 
       Token nextAssertionMethodToken = classToken.createChildTokenAt(2, assertionMethodName, "}");
 
-      createListAssertionsAndFactoryMethod(listType, clazz, simpleListName, nextAssertionMethodToken);
+      createListAssertionsAndFactoryMethod(listObj, listType, clazz, simpleListName,
+          nextAssertionMethodToken);
 
       //generateTest(value, nextAssertionMethodToken);
 
     } else if (type.equals(java.util.Map.class)) {
 
     }
-    //rootObj.setMyObjList(typeList);
-    //import java.util.Collection;
-    //import java.util.List;
-    //import java.util.Map;
-    //import com.ebbnflow.MyType;
-    //assertMyTypeList(aSimplePojo.getMyObjList());
-    //generateTest(value, nextAssertionMethodToken);
-
   }
 
-  private void createListAssertionsAndFactoryMethod(ParameterizedType listType, Class<?> clazz,
+  private void createListAssertionsAndFactoryMethod(Object object, ParameterizedType listType, Class<?> clazz,
       String simpleListName, Token nextAssertionMethodToken) {
 
     //public List<MyClass> createMyClassList(){
@@ -246,10 +241,29 @@ public class UnitTestGenerator<T> {
             simpleListName),
         "");
 
-    //flatten them out
-    //assert("val", list.get(0).getMyProp(), "these should equal");
-    //assert("val", list.get(0).getMyProp2(), "these should equal");
-    //assert("val", list.get(1).getMyProp1(), "these should equal for second item in list");
+    List objList = (List)object;
+    int size = objList.size();
+    for(int ii = 0; ii < size; ii++){
+      Object o = objList.get(ii);
+      if (isPrimitiveOrWrapper(o.getClass())){
+
+      } else if (isClassCollection(o.getClass())){
+
+      } else {
+        //is complex object
+        //assertMyItem1(myList.get(1));
+
+        //MyItem item1 = createMyItem1();
+        //myList.add(item1);
+
+        //public MyItem createMyItem1(){
+        //  MyItem item = new MyItem();
+        //  item.setThing("some thing");
+        //  return item;
+        //}
+      }
+    }
+//    writeListAssertions(clazz, object);
 
     factoryMethodListRoot.createChildToken(
         MessageFormat.format("return a{0}{1};",
@@ -258,13 +272,22 @@ public class UnitTestGenerator<T> {
         "");
   }
 
+//  private <Type> void writeListAssertions(Class<Type> clazz, Object obj) {
+//    //flatten them out
+//    //assert("val", list.get(0).getMyProp(), "these should equal");
+//    //assert("val", list.get(0).getMyProp2(), "these should equal");
+//    //assert("val", list.get(1).getMyProp1(), "these should equal for second item in list");
+//
+//  }
+
   private void createObjectMethodCall(Object object, Token assertionMethodToken,
       Token factoryMethodRoot, Field item, Class<?> type, String getterName, String setterName,
       Object value)
       throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
     // MyType type = createMyType(); // for every complex object under this root, there will be a createType() factory method
     factoryMethodRoot.createChildToken(
-        type.getSimpleName() + " a" + type.getSimpleName() + " = create" + type.getSimpleName() + "();",
+        type.getSimpleName() + " a" + type.getSimpleName() + " = create" + type.getSimpleName()
+            + "();",
         null);
     //rootObj.setMyObj(myObj);
     factoryMethodRoot.createChildToken(
