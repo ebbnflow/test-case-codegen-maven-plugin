@@ -2,19 +2,23 @@ package com.github.ebbnflow;
 
 
 import com.google.common.base.Strings;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang3.ClassUtils;
-
-import javax.swing.*;
+import com.google.googlejavaformat.java.Formatter;
+import com.google.googlejavaformat.java.FormatterException;
 import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang3.ClassUtils;
 
 public class UnitTestGenerator<T> {
     private Token rootToken;
@@ -27,7 +31,7 @@ public class UnitTestGenerator<T> {
         this.rootObj = obj;
     }
 
-    public void generateTest() throws IOException, InvocationTargetException, NoSuchMethodException, IntrospectionException, IllegalAccessException {
+    public void generateTest() throws IOException, InvocationTargetException, NoSuchMethodException, IntrospectionException, IllegalAccessException, FormatterException {
         rootToken = new Token();
         rootToken.setTokenStart("package " + rootObj.getClass().getPackage().getName() + ";");
         importsTokenRoot = rootToken.createChildToken();
@@ -129,12 +133,7 @@ public class UnitTestGenerator<T> {
                 Token pojoCreationToken = classToken.createChildTokenAt(2, pojoCreationMethodName, "}");
                 generateTest(value, pojoCreationToken);
             }
-
-
         }
-        //assertEquals(type.field1, "value of field 1", "field name should be equal")
-        //assertMyNestedObj(type.getMyNestedObj()); //for every nested obj, make an assertion method that will assert all items in that object.
-        //}
 
         factoryMethodRoot.createChildToken(
                 MessageFormat.format("return a{0};",
@@ -160,16 +159,6 @@ public class UnitTestGenerator<T> {
         return getterName;
     }
 
-//    private Token writeFactoryCreationMethod(Object obj, Token token) {
-//        //Object myObj = createMyObj();
-//        token.createChildToken(obj.getClass().getName() + " a" + obj.getClass().getSimpleName() + " = create" + obj.getClass().getSimpleName() + "();", null);
-//        //rootObj.setMyObj(myObj);
-//
-//        //import com.ebbnflow.MyObj;
-//        importsTokenRoot.createChildToken("import " + obj.getClass().getName() + ";", null);
-//        return classToken.createChildToken(MessageFormat.format("public {0} create{1}()'{'", obj.getClass().getSimpleName(), obj.getClass().getSimpleName()), "}");
-//    }
-
     private List<Field> createFieldList(Class<?> clazz) {
         List<Field> fields = new ArrayList<>();
         fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
@@ -180,32 +169,33 @@ public class UnitTestGenerator<T> {
         return fields;
     }
 
-    public void printCode(String path) throws IOException {
-        StringBuilder builder = new StringBuilder();
-        FileWriter fstream = new FileWriter(path);
-        BufferedWriter info = new BufferedWriter(fstream);
-        writeToken(info, rootToken);
-        info.close();
+    public void printCode(String path) throws IOException, FormatterException {
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+        writeToken(writer, rootToken);
+        writer.close();
+        String formatSource = new Formatter().formatSource(stringWriter.toString());
+        java.nio.file.Files.write( Paths.get(path), formatSource.getBytes());
     }
 
-    private void writeToken(BufferedWriter info, Token token) throws IOException {
+    private void writeToken(BufferedWriter writer, Token token) throws IOException {
         if (!Strings.isNullOrEmpty(token.getTokenStart())) {
-            info.write(token.getTokenStart());
-            info.newLine();
+            writer.write(token.getTokenStart());
+            writer.newLine();
         }
         if (null != token.getChildTokens() && token.getChildTokens().size() > 0) {
             for (Token nestedToken : token.getChildTokens()) {
-                writeToken(info, nestedToken);
+                writeToken(writer, nestedToken);
             }
         }
 
         if (Strings.isNullOrEmpty(token.getTokenEnd()))
             return;
 
-        info.write(token.getTokenEnd());
+        writer.write(token.getTokenEnd());
 
         if (token.isNewLineAfterTokenEnd())
-            info.newLine();
+            writer.newLine();
     }
 
     public static boolean isClassCollection(Class<?> c) {
