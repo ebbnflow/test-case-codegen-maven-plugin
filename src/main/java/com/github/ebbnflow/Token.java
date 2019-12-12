@@ -71,6 +71,17 @@ public class Token {
         return newChildToken;
     }
 
+    public Token createChildTokenAt(int index, String startToken, String tokenEnd) {
+        if (null == this.childTokens) {
+            this.childTokens = new ArrayList<>();
+        }
+        Token newChildToken = new Token();
+        this.childTokens.add(index, newChildToken);
+        newChildToken.tokenStart = startToken;
+        newChildToken.tokenEnd = tokenEnd;
+        return newChildToken;
+    }
+
     public boolean isNewLineAfterTokenEnd() {
         return newLineAfterTokenEnd;
     }
