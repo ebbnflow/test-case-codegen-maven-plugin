@@ -57,34 +57,30 @@ public class UnitTestGenerator<T> {
         List<Field> fieldList = createFieldList(object.getClass());
         for (Field item : fieldList) {
             Class<?> type = item.getType();
+            String getterName = findGetterName(type, item);
+            String setterName = findSetterName(type, item);
+            Object value = PropertyUtils.getProperty(object, item.getName());
+
             //if is primitive then assert and add a line to the creation method
             if (isPrimitiveOrWrapper(type)) {
-                Object value = PropertyUtils.getProperty(object, item.getName());
                 String writeValue = value.toString();
                 if (value instanceof String) {
                     writeValue = MessageFormat.format("\"{0}\"", value);
                 }
 
-                String getterName;
-                if (type.equals(boolean.class) || type.equals(Boolean.TYPE)) {
-                    getterName = "is" + Character.toUpperCase(item.getName().charAt(0)) + item.getName().substring(1);
-                } else {
-                    getterName = "get" + Character.toUpperCase(item.getName().charAt(0)) + item.getName().substring(1);
-                }
-
                 assertionMethodToken.createChildToken(
                         MessageFormat.format("assertEquals({0}, a{1}.{2}(), {3});",
                                 writeValue, obj.getClass().getSimpleName(), getterName,
-                        MessageFormat.format("\"{0} must equal\"", item.getName())),
+                                MessageFormat.format("\"{0} must equal\"", item.getName())),
                         null);
 
-                String setterName = "set" + Character.toUpperCase(item.getName().charAt(0)) + item.getName().substring(1);
                 factoryMethodRoot.createChildToken(
                         MessageFormat.format("a{0}.{1}({2});",
                                 object.getClass().getSimpleName(),
                                 setterName,
                                 writeValue),
                         "");
+
             } else if (isClassCollection(type)) {
                 //else if a list
                 //flatten them out
@@ -95,8 +91,13 @@ public class UnitTestGenerator<T> {
             } else {
 
                 //else if a Pojo then
-                //1.assertionMethodToken.createChild("assertNestedThing(thing);", null)
-                //2 call generateTest(nestedObj, classToken.createChildToken());
+                assertionMethodToken.createChildToken(
+                        MessageFormat.format("assert{0}(a{1}.{2}());",
+                            item.getName(),
+                            object.getClass().getSimpleName(),
+                            getterName),
+                        null);
+                generateTest(value, classToken.createChildToken());
             }
 
 
@@ -109,6 +110,20 @@ public class UnitTestGenerator<T> {
                 MessageFormat.format("return a{0};",
                         object.getClass().getSimpleName()),
                 "");
+    }
+
+    private String findSetterName(Class<?> type, Field item) {
+        return "set" + Character.toUpperCase(item.getName().charAt(0)) + item.getName().substring(1);
+    }
+
+    private String findGetterName(Class<?> type, Field item) {
+        String getterName;
+        if (type.equals(boolean.class) || type.equals(Boolean.TYPE)) {
+            getterName = "is" + Character.toUpperCase(item.getName().charAt(0)) + item.getName().substring(1);
+        } else {
+            getterName = "get" + Character.toUpperCase(item.getName().charAt(0)) + item.getName().substring(1);
+        }
+        return getterName;
     }
 
     private Token writeFactoryCreationMethod(T obj, Token token) {
@@ -155,13 +170,11 @@ public class UnitTestGenerator<T> {
             info.newLine();
     }
 
-    //    public static boolean isCollection(Object ob) {
-//        return ob instanceof Collection || ob instanceof Map || ob.getClass().isArray();
-//    }
     public static boolean isClassCollection(Class<?> c) {
         return Collection.class.isAssignableFrom(c) || Map.class.isAssignableFrom(c) || c.isArray();
     }
-    public static boolean isPrimitiveOrWrapper(Class<?> type){
+
+    public static boolean isPrimitiveOrWrapper(Class<?> type) {
         return ClassUtils.isPrimitiveOrWrapper(type) || type.equals(String.class);
     }
 }

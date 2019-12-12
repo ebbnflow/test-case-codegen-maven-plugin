@@ -8,6 +8,7 @@ public class SimplePojo {
     private int myNumber;
     private String myString;
     private List<NestedClass> myNestedList;
+    private Student student;
 
     public int getMyNumber() {
         return myNumber;
@@ -33,12 +34,21 @@ public class SimplePojo {
         this.myNestedList = myNestedList;
     }
 
+    public Student getStudent() {
+        return student;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
+    }
+
     @Override
     public String toString() {
         return "SimplePojo{" +
                 "myNumber=" + myNumber +
                 ", myString='" + myString + '\'' +
                 ", myNestedList=" + myNestedList +
+                ", student=" + student +
                 '}';
     }
 
@@ -48,13 +58,14 @@ public class SimplePojo {
         if (o == null || getClass() != o.getClass()) return false;
         SimplePojo that = (SimplePojo) o;
         return myNumber == that.myNumber &&
-                Objects.equals(myString, that.myString) &&
-                Objects.equals(myNestedList, that.myNestedList);
+                com.google.common.base.Objects.equal(myString, that.myString) &&
+                com.google.common.base.Objects.equal(myNestedList, that.myNestedList) &&
+                com.google.common.base.Objects.equal(student, that.student);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(myNumber, myString, myNestedList);
+        return com.google.common.base.Objects.hashCode(myNumber, myString, myNestedList, student);
     }
 
     public static class NestedClass{
