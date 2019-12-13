@@ -279,21 +279,9 @@ public class UnitTestGenerator<T> {
         Token nextAssertionMethodToken = classToken.createChildTokenAt(2, assertionMethodConstructName, "}");
 
         createObjectFactoryAndAssertions(o, nextAssertionMethodToken, true, String.valueOf(ii));
-        //is complex object
-        //assertMyItem1(myList.get(1));
-
-        //MyItem item1 = createMyItem1();
-        //myList.add(item1);
-
-        //public MyItem createMyItem1(){
-        //  MyItem item = new MyItem();
-        //  item.setThing("some thing");
-        //  return item;
-        //}
       }
 
     }
-//    writeListAssertions(clazz, object);
 
     factoryMethodListRoot.createChildToken(
         MessageFormat.format("return a{0}{1};",
@@ -301,14 +289,6 @@ public class UnitTestGenerator<T> {
             simpleListName),
         "");
   }
-
-//  private <Type> void writeListAssertions(Class<Type> clazz, Object obj) {
-//    //flatten them out
-//    //assert("val", list.get(0).getMyProp(), "these should equal");
-//    //assert("val", list.get(0).getMyProp2(), "these should equal");
-//    //assert("val", list.get(1).getMyProp1(), "these should equal for second item in list");
-//
-//  }
 
   private void createObjectMethodCall(Object parentObject, Token assertionMethodToken,
       Token factoryMethodRoot, Field item, Class<?> type, String getterName, String setterName,
