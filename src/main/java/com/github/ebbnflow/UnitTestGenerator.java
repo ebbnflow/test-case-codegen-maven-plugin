@@ -1,12 +1,13 @@
 package com.github.ebbnflow;
 
-
 import com.google.common.base.Strings;
 import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -14,6 +15,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.ClassUtils;
+import org.openjdk.tools.sjavac.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +112,12 @@ public class UnitTestGenerator<T> {
       Class<?> type = item.getType();
       String getterName = findGetterName(type, item);
       String setterName = findSetterName(type, item);
-      Object value = PropertyUtils.getProperty(object, item.getName());
+      Object value = null;
+      try {
+        value = PropertyUtils.getProperty(object, item.getName());
+      }catch (Exception ex){
+        log.error("this needs attention", ex);
+      }
 
       if (null == value) {
         log.warn(
@@ -132,6 +142,8 @@ public class UnitTestGenerator<T> {
         String writeValue = value.toString();
         if (value instanceof String) {
           writeValue = MessageFormat.format("\"{0}\"", value);
+        } else if (ClassUtils.isPrimitiveWrapper(type)){
+          writeValue = MessageFormat.format("new {0}({1})", type.getSimpleName(), String.valueOf(value));
         }
 
         //assertEquals("str", aAddress.getCity(), "city must equal");
@@ -162,7 +174,52 @@ public class UnitTestGenerator<T> {
             setterName,
             value);
 
-      } else {
+      } else if(type.getCanonicalName().equalsIgnoreCase(LocalDateTime.class.getCanonicalName())) {
+        this.importPackage(LocalDateTime.class);
+        this.importPackage(DateTimeFormatter.class);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formatDateTime = ((LocalDateTime)value).format(formatter);
+
+        //assertEquals("str", aAddress.getCity(), "city must equal");
+        assertionMethodToken.createChildToken(
+            MessageFormat.format("assertEquals(LocalDateTime.parse(\"{0}\",DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\")), a{1}.{2}(), {3});",
+                formatDateTime,
+                object.getClass().getSimpleName(),
+                getterName,
+                MessageFormat.format("\"{0} must equal\"", item.getName())),
+            null);
+
+        //aMyObj.setMyProp(prop);
+        factoryMethodRoot.createChildToken(
+            MessageFormat.format("a{0}.{1}(LocalDateTime.parse(\"{2}\",DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\")));",
+                object.getClass().getSimpleName(),
+                setterName,
+                formatDateTime),
+            "");
+      } else if(type.getCanonicalName().equalsIgnoreCase(LocalDate.class.getCanonicalName())) {
+        this.importPackage(LocalDate.class);
+        this.importPackage(DateTimeFormatter.class);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formatDateTime = ((LocalDate)value).format(formatter);
+
+        assertionMethodToken.createChildToken(
+            MessageFormat.format("assertEquals(LocalDate.parse(\"{0}\",DateTimeFormatter.ofPattern(\"yyyy-MM-dd\")), a{1}.{2}(), {3});",
+                formatDateTime,
+                object.getClass().getSimpleName(),
+                getterName,
+                MessageFormat.format("\"{0} must equal\"", item.getName())),
+            null);
+
+        //aMyObj.setMyProp(prop);
+        factoryMethodRoot.createChildToken(
+            MessageFormat.format("a{0}.{1}(LocalDate.parse(\"{2}\",DateTimeFormatter.ofPattern(\"yyyy-MM-dd\")));",
+                object.getClass().getSimpleName(),
+                setterName,
+                formatDateTime),
+            "");
+
+      }else {
 
         //else if a Pojo then
         createObjectMethodCall(object,
@@ -215,9 +272,8 @@ public class UnitTestGenerator<T> {
           "");
 
       //import com.ebbnflow.MyType;
-      if (!isImported(clazz.getCanonicalName())) {
-        importsTokenRoot.createChildToken("import " + clazz.getCanonicalName() + ";", null);
-      }
+      importPackage(clazz);
+
       //assertMyNestedList(aSimplePojo.getMyNestedList());
       assertionMethodToken.createChildToken(
           MessageFormat.format("assert{0}(a{1}.{2}());",
@@ -241,8 +297,8 @@ public class UnitTestGenerator<T> {
 
       //generateTest(value, nextAssertionMethodToken);
 
-    } else if (type.equals(java.util.Map.class)) {
-
+    } else if (type.equals(Map.class)) {
+      //TODO:
     }
   }
 
@@ -339,10 +395,10 @@ public class UnitTestGenerator<T> {
         ),
         "");
 
+
     //import com.ebbnflow.MyObj;
-    if (!isImported(type.getName())) {
-      importsTokenRoot.createChildToken("import " + type.getName() + ";", null);
-    }
+    importPackage(type);
+
     //assertStudent(aSimplePojo.getStudent());
     assertionMethodToken.createChildToken(
         MessageFormat.format("assert{0}(a{1}.{2}());",
@@ -390,14 +446,26 @@ public class UnitTestGenerator<T> {
   }
 
   public void printCode(String path) throws IOException, FormatterException {
+    StringWriter stringWriter = new StringWriter();
+    BufferedWriter bufferedStringWriter = new BufferedWriter(stringWriter);
+    writeToken(bufferedStringWriter, rootToken);
+    bufferedStringWriter.close();
+    System.out.println(stringWriter.toString());
+
+
+    File yourFile = new File(Paths.get(path).toAbsolutePath().toString());
+    yourFile.getParentFile().mkdirs();
+    final boolean newFile = yourFile.createNewFile();
+
     FileWriter writer = new FileWriter(path);
     BufferedWriter bufferedWriter = new BufferedWriter(writer);
     writeToken(bufferedWriter, rootToken);
     bufferedWriter.close();
+
     //reading it in again - makes it easier to debug - not efficient code tho.
     String codeString = new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
     String formatSource = new Formatter().formatSource(codeString);
-    java.nio.file.Files.write(Paths.get(path), formatSource.getBytes());
+    Files.write(Paths.get(path), formatSource.getBytes());
   }
 
   private void writeToken(BufferedWriter writer, Token token) throws IOException {
@@ -430,7 +498,15 @@ public class UnitTestGenerator<T> {
     return ClassUtils.isPrimitiveOrWrapper(type) || type.equals(String.class);
   }
 
+  public void importPackage(Class clazz){
+    if (!isImported(clazz.getCanonicalName())) {
+      importsTokenRoot.createChildToken("import " + clazz.getCanonicalName() + ";", null);
+      importList.add(clazz.getCanonicalName());
+    }
+  }
+
   public boolean isImported(String typeName) {
     return importList.stream().anyMatch(x -> x.equalsIgnoreCase(typeName));
   }
 }
+

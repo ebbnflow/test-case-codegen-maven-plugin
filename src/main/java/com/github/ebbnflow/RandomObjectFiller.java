@@ -1,14 +1,20 @@
 package com.github.ebbnflow;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RandomObjectFiller {
 
@@ -40,7 +46,7 @@ public class RandomObjectFiller {
         Class<?> type = field.getType();
         if (type.equals(List.class)) {
             return createList(field);
-        } else if (type.equals(java.util.Map.class)) {
+        } else if (type.equals(Map.class)) {
             return createMap(field);
         }
         return getRandomValueForType(type);
@@ -65,6 +71,8 @@ public class RandomObjectFiller {
             return BigInteger.valueOf(random.nextInt());
         } else if (type.equals(LocalDateTime.class)) {
             return LocalDateTime.now();
+        }else if (type.equals(LocalDate.class)) {
+            return LocalDate.now();
         }
 
         return createAndFill(type);
@@ -93,11 +101,12 @@ public class RandomObjectFiller {
         return getGenericList(clazz);
     }
 
+    @SuppressWarnings("unchecked")
     private <Type> List<Type> getGenericList(Class<Type> clazz) throws Exception {
         int count = random.nextInt((listMax - listMin) + 1) + listMin;
         List<Type> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Type randomVal = createAndFill(clazz);
+            Type randomVal = (Type)getRandomValueForType(clazz);
             list.add(randomVal);
         }
         return list;
